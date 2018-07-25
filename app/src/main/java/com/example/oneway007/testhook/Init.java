@@ -65,6 +65,7 @@ public class Init implements IXposedHookLoadPackage{
         if(hostAppPackages.contains(loadPackageParam.packageName)){
             flag = true;
         }
+        //Hook除黑名单之外的包达到热补丁
         if (flag) {
             XposedHelpers.findAndHookMethod(Application.class, "attach", Context.class, new XC_MethodHook() {
                 @Override
@@ -74,6 +75,19 @@ public class Init implements IXposedHookLoadPackage{
                     invokeHandleHookMethod(context, handleHookClass, handleHookMethod, loadPackageParam);
                 }
             });
+        }
+        //Hook住xposed安装器让它不弹出重启的通知栏
+        if("de.robv.android.xposed.installer".equals(loadPackageParam.packageName)){
+            XposedHelpers.findAndHookMethod(loadPackageParam.classLoader.loadClass("de.robv.android.xposed.installer.util.NotificationUtil"),
+                    "showModulesUpdatedNotification", new XC_MethodHook() {
+                        @Override protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                            param.setResult(new Object());
+                        }
+
+                        @Override protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                            super.afterHookedMethod(param);
+                        }
+                    });
         }
     }
 
